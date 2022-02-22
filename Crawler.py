@@ -263,70 +263,70 @@ class TwitterCrawler(Crawler):
     # ==========================================================================
     # region ACCOUNT CHECKING
 
-    def check_account_followings(self, user) -> bool:
-        self.browser.get(f'https://twitter.com/{user}')
+    def check_account_followings(self, username) -> bool:
+        self.browser.get(f'https://twitter.com/{username}')
         self.wait_element('//h2')
 
-        return self.is_exist(page_loaded=True) and self.have_followings(user, page_loaded=True)
+        return self.is_exist(page_loaded=True) and self.have_followings(username, page_loaded=True)
 
-    def is_exist(self, user: str = None, page_loaded: bool = False) -> bool:
+    def is_exist(self, username: str = None, page_loaded: bool = False) -> bool:
         if page_loaded:
             # account doesn't exist will have div that has data-testid = emptyState
             return len(self.browser.find_elements(By.XPATH,
                                                   '//div[contains(@data-testid, "emptyState")]')) == 0
 
-        elif user is None:
-            raise ValueError("User is required when page hasn't been loaded")
+        elif username is None:
+            raise ValueError("Username is required when page hasn't been loaded")
 
         else:
-            self.browser.get(f'https://twitter.com/{user}')
+            self.browser.get(f'https://twitter.com/{username}')
             self.wait_element('//h2')
 
-            return self.is_exist(user, page_loaded=True)
+            return self.is_exist(username, page_loaded=True)
 
-    def have_followings(self, user: str = None, page_loaded: bool = False) -> bool:
+    def have_followings(self, username: str = None, page_loaded: bool = False) -> bool:
         if page_loaded:
             # check number of followings at the account intro
             followings = self.browser.find_element(By.XPATH,
-                                                   f"//a[substring(@href, string-length(@href) - string-length('{user}/following') +1) = '{user}/following']")
+                                                   f"//a[substring(@href, string-length(@href) - string-length('{username}/following') +1) = '{username}/following']")
             followings = followings.get_attribute('innerText').split(' ')[0]
             n_followings = self.to_number(followings)
 
             return n_followings > 0
 
-        elif user is None:
-            raise ValueError("User is required when page hasn't been loaded")
+        elif username is None:
+            raise ValueError("Username is required when page hasn't been loaded")
 
         else:
-            self.browser.get(f'https://twitter.com/{user}')
+            self.browser.get(f'https://twitter.com/{username}')
             self.wait_element('//h2')
 
-            return self.have_followings(user, page_loaded=True)
+            return self.have_followings(username, page_loaded=True)
 
-    def check_account_followers(self, user) -> bool:
-        self.browser.get(f'https://twitter.com/{user}')
+    def check_account_followers(self, username) -> bool:
+        self.browser.get(f'https://twitter.com/{username}')
         self.wait_element('//h2')
 
-        return self.is_exist(page_loaded=True) and self.have_followers(user, page_loaded=True)
+        return self.is_exist(page_loaded=True) and self.have_followers(username, page_loaded=True)
 
-    def have_followers(self, user=None, page_loaded=False) -> bool:
+    def have_followers(self, username=None, page_loaded=False) -> bool:
         if page_loaded:
             # check number of followers at the account intro
             followers = self.browser.find_element(By.XPATH,
-                                                  f"//a[substring(@href, string-length(@href) - string-length('{user}/followers') +1) = '{user}/followers']")
+                                                  f"//a[substring(@href, string-length(@href) - string-length('{username}/followers') +1) = '{username}/followers']")
             followers = followers.get_attribute('innerText').split(' ')[0]
             n_followers = self.to_number(followers)
 
             return n_followers > 0
 
-        elif user is None:
-            raise ValueError("User is required when page hasn't been loaded")
+        elif username is None:
+            raise ValueError("Username is required when page hasn't been loaded")
 
         else:
-            self.browser.get(f'https://twitter.com/{user}')
+            self.browser.get(f'https://twitter.com/{username}')
             self.wait_element('//h2')
 
-            return self.have_followers(user, page_loaded=True)
+            return self.have_followers(username, page_loaded=True)
 
     # endregion
     # ==========================================================================
@@ -341,17 +341,17 @@ class TwitterCrawler(Crawler):
         # get name
         name = user_cell.find_element(By.CSS_SELECTOR,
                                       "span.css-901oao.css-16my406.css-bfa6kz.r-poiln3.r-bcqeeo.r-qvutc0").get_attribute("innerText").strip()
-
-        # get id
+        # get username
         try:
-            id = user_cell.find_element(By.CSS_SELECTOR,
+            username = user_cell.find_element(By.CSS_SELECTOR,
                                         "div.css-1dbjc4n.r-18u37iz.r-1wbh5a2").get_attribute("innerText").strip()
+            username = username.split('@')[1]  # remove @ from username
         except NoSuchElementException:
-            id = None
+            username = None
 
         info = {'link': link,
                 'name': name,
-                'id': id}
+                'username': username}
 
         return info
 
@@ -361,26 +361,24 @@ class TwitterCrawler(Crawler):
     # ==========================================================================
     # region GET FOLLOWINGS
 
-    def get_followings(self, user, verbose=1) -> pd.DataFrame or None:
+    def get_followings(self, username, verbose=1) -> pd.DataFrame or None:
         # check account
-        if not self.check_account_followings(user):
+        if not self.check_account_followings(username):
             return
 
         # define followings set
         followings_user = []
 
         # get and wait for element
-        self.browser.get(f'https://twitter.com/{user}/following')
+        self.browser.get(f'https://twitter.com/{username}/following')
         user_cell = self.wait_element_and_select(
             '//div[contains(@data-testid, "primaryColumn")]//div[contains(@data-testid, "UserCell")]'
         )
 
         # * really start crawling
         while True:
-            # scroll to div
+            # scroll to div and get info
             self.scroll_to_element(user_cell)
-
-            # get info
             info = self._get_info_from_user_cell(user_cell)
 
             # print if verbose
@@ -410,16 +408,16 @@ class TwitterCrawler(Crawler):
     # ==========================================================================
     # region GET FOLLOWERS
 
-    def get_followers(self, user, verbose=1) -> pd.DataFrame or None:
+    def get_followers(self, username, verbose=1) -> pd.DataFrame or None:
         # check account
-        if not self.check_account_followers(user):
+        if not self.check_account_followers(username):
             return
 
         # define followers set
         followers_user = []
 
         # get and wait for element
-        self.browser.get(f'https://twitter.com/{user}/followers')
+        self.browser.get(f'https://twitter.com/{username}/followers')
         user_cell = self.wait_element_and_select(
             '//div[contains(@data-testid, "primaryColumn")]//div[contains(@data-testid, "UserCell")]'
         )
