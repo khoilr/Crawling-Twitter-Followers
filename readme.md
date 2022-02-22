@@ -43,7 +43,7 @@ If that account neither exists or suspended or doesn't follow anyone, return `No
 
 - `link`: The link of the username.
 - `name`: The name of the username.
-- `username`: The username of the username.
+- `username`: The username.
 
 Example `DataFrame` followings of [@IvePetThatDog](https://twitter.com/IvePetThatDog):
 | link                                  | name              | username               |
@@ -65,7 +65,7 @@ If that account neither exists or suspended or doesn't have any follower, return
 
 - `link`: The link of the username.
 - `name`: The name of the username.
-- `username`: The username of the username.
+- `username`: The username.
 
 #### `TwitterCrawler.is_exist(username: str = None, page_loaded: bool = False ) -> bool`
 
