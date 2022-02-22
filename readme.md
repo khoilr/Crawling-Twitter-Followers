@@ -4,7 +4,7 @@ This crawler use [`selenium`](https://www.seleniumhq.org/) to crawl the web.
 
 Your account must set language to **English** and **English (United States)** in your browser.
 
-Make sure Chrome is installed in your computer.
+**Make sure Chrome is installed in your computer.**
 
 > :warning: **2-step verification is not supported**, so you need to **disable it**.
 >
@@ -19,7 +19,7 @@ This module have two main features:
 
 ### `TwitterCrawler(account: dict)`
 
-- `account`: A dict contains `username`, `password` and `email` for suspended login activity.
+- `account`: A dict contains `username`, `password` and `email` for automatically login activity.
 
 Example:
 
